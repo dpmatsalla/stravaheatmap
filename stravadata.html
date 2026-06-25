@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Strava Data</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 10px;
+			background: #f5f5f5;
+		}
+		#filterBar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+			background: white;
+			padding: 10px;
+			border-radius: 8px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+			margin-bottom: 10px;
+		}
+		#filterBar label {
+			font-size: 13px;
+		}
+		#stravaData {
+			font-size: 11px;
+			background: lightgreen;
+			padding: 10px;
+			border-radius: 8px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+		}
+		select, input {
+			font-size: 13px;
+			padding: 2px 5px;
+		}
+		a {
+			color: #0077cc;
+			text-decoration: none;
+		}
+		a:hover {
+			text-decoration: underline;
+		}
+	</style>
+</head>
+<body>
+	<!-- Filter bar -->
+	<div id="filterBar">
+		<label>Type:
+			<select id="typeFilter">
+				<option value="">All</option>
+			</select>
+		</label>
+		<label>Zone:
+			<select id="zoneFilter">
+				<option value="">All</option>
+			</select>
+		</label>
+		<label>Distance (km):
+			<input type="number" id="minDist" placeholder="min" style="width:60px;">
+			-
+			<input type="number" id="maxDist" placeholder="max" style="width:60px;">
+		</label>
+		<label>Start Date:<input type="date" id="startDate" style="width:70px;"></label>
+		<label>End Date:<input type="date" id="endDate" style="width:70px;"></label>
+		<button id="applyFilter">Filter</button>
+		<span id="recordCount" style="margin-left:auto;font-size:12px;"></span>
+	</div>
+
+	<p id="stravaTotals"></p>
+	<p id="stravaData"></p>
+
+<script>
+// Minimal polyline decoder (returns just first coordinate)
+function decodeFirstLatLng(encoded) {
+	if (!encoded) return null;
+	let index = 0, lat = 0, lng = 0;
+	let b, shift = 0, result = 0;
+	// Decode latitude
+	do {
+		b = encoded.charCodeAt(index++) - 63;
+		result |= (b & 0x1f) << shift;
+		shift += 5;
+	} while (b >= 0x20);
+	const dlat = (result & 1 ? ~(result >> 1) : (result >> 1));
+	lat += dlat;
+
+	// Decode longitude
+	shift = 0;
+	result = 0;
+	do {
+		b = encoded.charCodeAt(index++) - 63;
+		result |= (b & 0x1f) << shift;
+		shift += 5;
+	} while (b >= 0x20);
+	const dlng = (result & 1 ? ~(result >> 1) : (result >> 1));
+	lng += dlng;
+
+	return [lat * 1e-5, lng * 1e-5];
+}
+
+const stravaData = document.getElementById('stravaData');
+const stravaTotals = document.getElementById('stravaTotals');
+let activityData = [];
+let myColorMap = {};
+
+// Load Strava data
+if (localStorage.getItem('strava_data')) {
+	try {
+		const data = JSON.parse(localStorage.getItem('strava_data'));
+		if (Array.isArray(data) && data.length > 0) {
+			if (data[0] && typeof data[0] === 'object' && data[0].hasOwnProperty('type')) {
+				activityData = data;
+			} else {
+				[myColorMap, ...activityData] = data;
+			}
+			precomputeZones();
+			initializeFilters();
+			applyFilters();
+		} else {
+			stravaData.innerHTML = 'No valid Strava data found';
+		}
+	} catch (err) {
+		stravaData.innerHTML = 'Error loading Strava data';
+	}
+} else {
+	stravaData.innerHTML = 'No Strava Data';
+}
+
+// Precompute zones (rounded 0.1° lat/lon)
+function precomputeZones() {
+	activityData.forEach(a => {
+		if (!a.map || !a.map.summary_polyline) return;
+		const first = decodeFirstLatLng(a.map.summary_polyline);
+		if (!first) return;
+		const lat = Math.round(first[0]); // * 10) / 10;
+		const lon = Math.round(first[1]); // * 10) / 10;
+		a.zone = `${lat.toFixed(0)}, ${lon.toFixed(0)}`;  // 1
+	});
+}
+
+// Build dropdowns
+function initializeFilters() {
+	const typeSelect = document.getElementById('typeFilter');
+	let zoneSelect = document.getElementById('zoneFilter');
+
+	// If zoneFilter doesn't exist, create it once
+	if (!zoneSelect) {
+		zoneSelect = document.createElement('select');
+		zoneSelect.id = 'zoneFilter';
+		zoneSelect.innerHTML = '<option value="">All Zones</option>';
+		document.getElementById('filterBar').insertBefore(zoneSelect, document.getElementById('applyFilter'));
+	} else {
+		// Clear existing options except "All Zones"
+		zoneSelect.innerHTML = '<option value="">All Zones</option>';
+	}
+
+	// Populate type dropdown
+	const types = [...new Set(activityData.map(a => a.type).filter(Boolean))].sort();
+	types.forEach(t => {
+		const opt = document.createElement('option');
+		opt.value = t;
+		opt.textContent = t;
+		typeSelect.appendChild(opt);
+	});
+
+	// Populate zone dropdown
+	const zones = [...new Set(activityData.map(a => a.zone).filter(Boolean))].sort();
+	zones.forEach(z => {
+		const opt = document.createElement('option');
+		opt.value = z;
+		opt.textContent = z;
+		zoneSelect.appendChild(opt);
+	});
+
+	// Apply filter event
+	document.getElementById('applyFilter').addEventListener('click', () => {
+		currentPage = 1;
+		applyFilters();
+	});
+}
+
+function formatDuration(seconds = 0) {
+	const h = Math.floor(seconds / 3600);
+	const m = Math.floor((seconds % 3600) / 60);
+	const s = seconds % 60;
+	return h > 0
+		? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+		: `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function applyFilters() {
+	const typeVal = document.getElementById('typeFilter').value;
+	const zoneVal = document.getElementById('zoneFilter').value;
+	const minDist = parseFloat(document.getElementById('minDist').value) || 0;
+	const maxDist = parseFloat(document.getElementById('maxDist').value) || Infinity;
+	const startDate = document.getElementById('startDate').value ? new Date(document.getElementById('startDate').value) : null;
+	const endDate = document.getElementById('endDate').value ? new Date(document.getElementById('endDate').value) : null;
+
+	const filtered = activityData.filter(a => {
+		if (typeVal && a.type !== typeVal) return false;
+		if (zoneVal && a.zone !== zoneVal) return false;
+		const distKm = (a.distance || 0) / 1000;
+		if (distKm < minDist || distKm > maxDist) return false;
+		if (startDate && new Date(a.start_date) < startDate) return false;
+		if (endDate && new Date(a.start_date) > endDate) return false;
+		return true;
+	});
+
+	//* stravaData.innerHTML = JSON.stringify(filtered[0]);
+	displayActivities(filtered);
+}
+
+function displayActivities(data) {
+	if (!data.length) {
+		stravaTotals.textContent = '';
+		stravaData.innerHTML = 'No activities match filters.';
+		document.getElementById('recordCount').textContent = '';
+		return;
+	}
+
+	const total = activityData.length;
+	document.getElementById('recordCount').textContent =
+		`Showing ${data.length} of ${total} activities`;
+
+	// ---- Totals ----
+	let totalDistance = 0; // metres
+	let totalElevation = 0; // metres
+	let totalDuration = 0; // seconds
+
+	for (const a of data) {
+		totalDistance += a.distance || 0;
+		totalElevation += a.total_elevation_gain || 0;
+		totalDuration += a.moving_time || a.elapsed_time || 0;
+	}
+
+	stravaTotals.textContent =
+		`Distance: ${(totalDistance / 1000).toFixed(0)} km · ` +
+		`Elev: ${totalElevation.toFixed(0)} m · ` +
+		`Time: ${formatDuration(totalDuration)}`;
+
+	// ---- Per-activity display ----
+	let html = data.map(a => {
+		const distKm = ((a.distance || 0) / 1000).toFixed(2);
+		const duration = formatDuration(a.moving_time || 0);
+
+		return `
+			<a href="https://www.strava.com/activities/${a.id}" target="_blank">${a.id}</a> |
+			${a.start_date?.substring(0,10) || ''} |
+			${a.type || ''} |
+			${distKm} km |
+			${a.total_elevation_gain || 0} m |
+			${duration} |
+			${a.zone || ''} |
+			${a.name || ''}<br>`;
+	}).join('');
+
+	stravaData.innerHTML = html;
+}</script>
+</body>
+</html>
