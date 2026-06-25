@@ -1,0 +1,113 @@
+<!-- 
+- 
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mapbox GL JS Map</title>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet" />
+	<link rel="stylesheet" href="style.css?v=11">
+</head>
+<body>
+	<div id="map"></div>
+	<div class="map-overlay" id="layerControl">
+		<img src="layer-icon.png" alt="Layers" class="icon">
+		<div class="options">
+			<input type="radio" name="tileLayer" value="streets" checked> Streets<br>
+			<input type="radio" name="tileLayer" value="satellite"> Satellite<br>
+			<input type="radio" name="tileLayer" value="navigation"> Navigation<br>
+			<input type="radio" name="tileLayer" value="light"> Light<br>
+			<input type="radio" name="tileLayer" value="dark"> Dark<br>
+			<input type="radio" name="tileLayer" value="white"> White<br>
+			<input type="radio" name="tileLayer" value="black"> Black<br><hr>
+			<input type="checkbox" id="hideControls"> Hide Controls<br>
+			<input type="checkbox" id="hideActivities"> Hide Activities<br><hr>
+			<a href='stravadata.html'>Show Activities Data</a><br><hr>
+			<a href='#' onclick='deleteCache()'>Delete Cache</a><br><hr>
+			<a href='https://spearers.com.au'>Spearers Home</a>
+		</div>
+	</div>
+	<div class="toggleFollow showHide">
+		FollowMe <input type="checkbox" id="follow">
+	</div>
+	<div class="toggleRouting showHide">
+		Routing <input type="checkbox" id="routing" checked>
+	</div>
+	<button id="authorizeBtn" class="showHide">Authorise Strava</button>
+	<button id="clearBtn" class="showHide">Clear</button>
+	<button id="loadBtn" class="showHide">Load</button>
+	<button id="saveBtn" class="showHide">Save</button>
+	<button id="colorBtn" class="showHide">Color</button>
+	<label id="athleteid"></label>
+	
+	<div id="overlay"></div>
+	<div id="popup">
+		<center><h3>Choose Colors</h3></center>
+		<div id="colorInputs"></div>
+		<div class="controls">
+			<button onclick="saveColors()">Save</button>
+			<button onclick="closePopup()">Cancel</button>
+		</div>
+	</div>
+
+	<script>
+
+const authorizeBtn = document.getElementById('authorizeBtn');
+const athleteIdElement = document.getElementById('athleteid');
+const loadBtn = document.getElementById('loadBtn');
+const saveBtn = document.getElementById('saveBtn');;
+const colorBtn = document.getElementById('colorBtn');;
+let metric = true;
+
+/*window.onerror = ErrorLog;
+function ErrorLog (msg, url, line) {
+	console.log("error: " + msg + "\n" + "file: " + url + "\n" + "line: " + line);
+	return true; // avoid to display an error message in the browser
+}*/
+
+window.onload = function() {
+	// Remove query parameters from the URL
+	if (window.location.search) {
+		const urlWithoutParams = window.location.origin + window.location.pathname;
+		window.history.replaceState({}, document.title, urlWithoutParams);
+	}
+};
+var notSaved = false;
+window.onbeforeunload = function(e) {
+	if (notSaved) {
+		// Display a confirmation dialog
+		e.preventDefault();
+		e.returnValue = ''; // Standard way to trigger a confirmation in most browsers
+	}
+};
+		
+const layerControl = document.getElementById('layerControl');
+const layerOptions = layerControl.querySelector('.options');
+
+function closeLayerMenu() {
+	layerOptions.classList.remove('is-open');
+}
+window.closeLayerMenu = closeLayerMenu;
+
+layerControl.querySelector('.icon').addEventListener('click', function(e) {
+	e.stopPropagation();
+	layerOptions.classList.toggle('is-open');
+});
+
+layerControl.addEventListener('click', function(e) {
+	e.stopPropagation();
+});
+
+document.addEventListener('click', function() {
+	closeLayerMenu();
+});
+
+	</script>
+	<script src="map.js?v=11"></script>
+	<script src="getstrava2.js?v=11"></script>
+	<script src="route.js?v=11"></script>
+</body>
+</html>

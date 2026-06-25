@@ -1,0 +1,236 @@
+body, html {
+	font-family: 'Roboto', sans-serif;
+	margin: 0; 
+	padding: 0;
+	height: 100%;
+}
+#map { 
+	position: absolute; 
+	top: 0; 
+	bottom: 0; 
+	width: 100%; 
+}
+.map-overlay {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 2;
+} 
+.icon {
+	width: 35px;
+	height: 35px;
+	cursor: pointer;
+}
+.options {
+	position: absolute;
+	display: none;
+	background: white;
+	padding: 10px;
+	top: 35px;
+	right: 0px;
+	width: 150px;
+}
+.options.is-open {
+	display: block;
+	z-index: 2;
+}
+/* Now fields */
+.toggleFollow, .elevation-box, .speed-box, .time-box {
+	position: absolute;
+	z-index: 1;
+	background-color: rgba(0, 0, 0, 0.2); /* 50% transparent background */
+	color: #fff; /* White text */
+	border-radius: 5px;
+}
+.toggleFollow {
+	padding: 5px;
+	top: 10px;
+	left: 50px;
+}
+.elevation-box {
+	font-size: 30px;
+	padding: 8px 5px 2px;
+	top: 50px; 
+	right: 10px; 
+	text-align: right;
+}
+.speed-box {
+	pointer-events: none;
+	font-size: 42px;
+	padding: 5px;
+	left: 50%;
+	transform: translateX(-50%);
+	text-align: center;
+	line-height: 1.2;
+}
+@media (orientation: portrait) {
+	.speed-box {
+		top: 70px;
+	}
+}
+@media (orientation: landscape) {
+	.speed-box {
+		top: 10px;
+	}
+}
+.time-box {
+	font-size: 30px;
+	padding: 8px 5px 2px;
+	bottom: 20px; 
+	right: 10px; 
+	text-align: right;
+}
+
+/* Historical fields */
+.distance-box, .climb-box, .avgspeed-box {
+	pointer-events: none;
+	position: absolute;
+	z-index: 1;
+	background-color: rgba(0, 0, 0, 0.2);
+	color: #ff9; 
+	border-radius: 5px;
+	font-size: 30px;
+	padding: 8px 5px 2px;
+}
+.distance-box {
+	bottom: 140px; 
+	right: 10px; 
+	text-align: right;
+}
+.climb-box {
+	bottom: 100px; 
+	right: 10px; 
+	text-align: right;
+}
+.avgspeed-box {
+	bottom: 60px; 
+	right: 10px; 
+	text-align: right;
+}
+
+/* Routing fields */
+.toggleRouting, .route-dist-box, .route-climb-box {
+	position: absolute;
+	z-index: 1;
+	background-color: rgba(0, 0, 0, 0.2); /* 50% transparent background */
+	color: #9ff; /* White text */
+	border-radius: 5px;
+}
+.toggleRouting {
+	padding: 5px;
+	bottom: 60px;
+	left: 10px;
+}
+.route-dist-box {
+	pointer-events: none;
+	font-size: 30px;
+	padding: 8px 5px 2px;
+	bottom: 140px; 
+	left: 10px; 
+	text-align: left;
+}
+.route-climb-box {
+	pointer-events: none;
+	font-size: 30px;
+	padding: 8px 5px 2px;
+	bottom: 100px; 
+	left: 10px; 
+	text-align: left;
+}
+
+/* Athlete fields */
+#authorizeBtn {
+	position: absolute;
+	z-index: 1;
+	background-color: rgba(255, 102, 0, 0.6);
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 8px;
+	font-size: 12px;
+	top: 10px;
+	right: 55px;
+	cursor: pointer;
+}
+#colorBtn, #clearBtn, #loadBtn, #saveBtn {
+	position: absolute;
+	z-index: 1;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	padding: 6px;
+	font-size: 16px;
+}
+#colorBtn {
+	background-color: rgba(255, 102, 0, 0.4);
+	bottom: 60px;
+	left: 115px;
+}
+#clearBtn {
+	background-color: rgba(100, 52, 80, 0.6);
+	cursor: pointer;
+	bottom: 20px;
+	left: 10px;
+}
+#loadBtn {
+	background-color: rgba(100, 102, 0, 0.6);
+	cursor: pointer;
+	bottom: 20px;
+	left: 65px;
+}
+#saveBtn {
+	background-color: rgba(100, 102, 0, 0.6);
+	cursor: pointer;
+	bottom: 20px;
+	left: 120px;
+}
+#athleteid {
+	position: absolute;
+	color: #000;
+	font-size: 16px;
+	font-weight: bold;
+	text-align: center;
+	bottom: 2px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+/* popup */
+#popup {
+	display: none;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	max-height: 90vh;
+	background-color: white;
+	padding: 10px;
+	border: 1px solid #ccc;
+	box-shadow: 0 0 10px rgba(0,0,0,0.5);
+	z-index: 1000;
+	overflow-y: auto;
+}
+#overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 999;
+}
+.item {
+	margin-bottom: 5px;
+}
+.controls {
+	text-align: center;
+	margin-top: 10px;
+}
+		
+input[type="color"] {
+	border: 1px #000; /* Adjust thickness (3px), style (solid), and color (#000 for black) */
+	border-radius: 5px;
+	background-color: transparent;
+	padding: 0; /* Optional: Adjust padding inside the color box */
+}
